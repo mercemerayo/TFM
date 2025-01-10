@@ -1,0 +1,41 @@
+---
+title: "Validación de los puntos de rotura de la inversión $U_8$"
+author: "Merce Merayo Pastor"
+date: "2025-01-02"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    theme: paper
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+# Introducción
+
+En este documento se da formato a los resultados del alineamiento BLAST de los *contigs* resultantes del ensamblaje *de novo* de las lecturas y el genoma de referencia de *Drosophila subobscura*.
+
+# Validación de los puntos de rotura 
+
+Tras realizar en ensamblaje de novo de las regiones que se encuentran $\pm$ 5Kb de los puntos de rotura proximal y distal se hace un BLASTn contra el genoma de referencia. Luego se filtra por cromosoma y coordenadas cercanas a los valores encontrados con Breakdancer para la inversión $U_8$. Este resultado se encuentra en el fichero `ven_5K_blast_flanqueantes.txt`.
+
+Ahora se quiere visualizar los datos obtenidos de los *contigs* que se encuentran en las regiones flanqueantes. Se nombran las columnas en base al formato descrito en la documentación de BLAST [https://www.metagenomics.wiki/tools/blast/blastn-output-format-6].
+
+```{r}
+library(kableExtra)
+contigs_5kb_U8_BLAST <- read.delim("ven_5K_blast_flanqueantes.txt", header = FALSE, sep = "\t")
+colnames(contigs_5kb_U8_BLAST) <- c("Contig", "Cromosoma", "Coincidencia_porc", "Longitud_Alineamiento", 
+                     "mismatch", "gapopen", "Inicio_Contig", "Fin_Contig", 
+                     "Coord_Inicio", "Coord_Fin", "Evalor", "bitscore")
+kable(contigs_5kb_U8_BLAST, 
+      col.names = c("Contig", "Cromosoma", "% Coincidencia", "Long. alineamiento", "mismatch", "gapopen", "Inicio Contig", "Fin Contig",  "Coord Inicio", "Coord Fin", "Evalor", "bitscore"),
+      format = "html" )  %>%
+  kable_styling(
+    bootstrap_options = c("striped", "hover", "condensed"), 
+    font_size = 13 
+  )
+
+```
+

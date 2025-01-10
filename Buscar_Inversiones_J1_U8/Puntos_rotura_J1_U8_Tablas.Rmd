@@ -1,0 +1,142 @@
+---
+title: "Puntos de rotura identificados en los cromosomas J y U"
+author: "Merce Merayo Pastor"
+date: "2024-11-16"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    theme: paper
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+
+# Introducción
+
+Este informe analiza los puntos de rotura identificados en los cromosomas J y U, utilizando el software `Breakdancer`.
+
+## Procesado de datos del Cromosoma J
+```{r carga_datos_J}
+library(dplyr)
+library(readr)
+library(kableExtra)
+
+df_cromosoma_J <- read_delim(
+  "OF58_breakpoints_bwa_J.txt", 
+  delim = "\t", 
+  comment = "#",
+  col_names = c("Cromosoma", "Posicion_1", "Orientacion_1", "Cromosoma2", "Posicion_2", "Orientacion_2", 
+                "Tipo_SV", "Longitud", "Score", "Num_Reads", "num_Reads_orig", "Valor"),
+  show_col_types = FALSE
+)
+
+head(df_cromosoma_J)
+```
+
+Se limpia el dataset para dejar solo los campos de interes, concretamente se elimina el nombre del cromosoma 2, ya que solo se trabaja con un cromosoma y el nombre del fichero.
+
+```{r limpieza_J}
+df_cr_J_prep <- df_cromosoma_J %>% select(-c("Cromosoma2","num_Reads_orig","Valor"))
+head(df_cr_J_prep)
+```
+
+Se filtran las inversiones con un Score superior al 90%
+
+```{r}
+df_crom_J_INV <- df_cr_J_prep %>% filter(Tipo_SV == "INV")
+paste("Se detectan",nrow(df_crom_J_INV), "inversiones en el cromosoma J.")
+df_crom_J_INV_90 <- df_cr_J_prep %>% filter(Tipo_SV == "INV" & Score>=90)
+paste("De las inversiones detectadas en el cromosoma J", nrow(df_crom_J_INV_90), "tienen un Score superior al 90%.")
+```
+
+### Resultados de potenciales inversiones del cromosoma J 
+
+Las inversiones se espera que tengan más de 1 millón de pares de bases, y se visualiza si al menos alguna de ellas podría ser válida.
+
+```{r}
+df_crom_J_INV_90_1M <- df_crom_J_INV_90 %>% filter(Longitud > 1000000)
+paste( "Hay", nrow(df_crom_J_INV_90_1M), "inversiones a analizar.")
+df_crom_J_INV_90_1M
+```
+
+```{r}
+library(kableExtra)
+df_crom_J_INV_90_1M %>%
+ kable(
+    caption = "Tabla de inversiones a analizar en el cromosoma J.", 
+    align = "c",
+    col.names = c("Cromosoma", "Posición 1", "Orientación 1", "Posición 2", "Orientación 2", "Tipo SV", "Longitud", "Score", "Número de Lecturas"), 
+    format = "html" 
+  ) %>%
+  kable_styling(
+    bootstrap_options = c("striped", "hover", "condensed"), 
+    font_size = 14 
+  )
+```
+
+
+## Procesado de datos del Cromosoma U
+
+Se sigue el mismo proceso en el cromosoma U que el realizado en el cromosoma J.
+
+
+```{r carga_datos_U}
+df_cromosoma_U <- read_delim(
+  "OF58_breakpoints_bwamem2_U.txt", 
+  delim = "\t", 
+  comment = "#",
+  col_names = c("Cromosoma", "Posicion_1", "Orientacion_1", "Cromosoma2", "Posicion_2", "Orientacion_2", 
+                "Tipo_SV", "Longitud", "Score", "Num_Reads", "num_Reads_orig", "Valor"),
+  show_col_types = FALSE
+)
+
+head(df_cromosoma_U)
+```
+
+Tras dar formato a las columnas 
+
+```{r limpieza_U}
+df_cr_U_prep <- df_cromosoma_U %>% select(-c("Cromosoma2","num_Reads_orig","Valor"))
+head(df_cr_U_prep)
+```
+
+Se filtran las inversiones con un Score superior al 90%.
+
+```{r}
+df_crom_U_INV <- df_cr_U_prep %>% filter(Tipo_SV == "INV")
+paste("Se detectan",nrow(df_crom_U_INV), "inversiones en el cromosoma U.")
+df_crom_U_INV_90 <- df_cr_U_prep %>% filter(Tipo_SV == "INV" & Score>=90)
+paste("De las inversiones detectadas en el cromosoma J", nrow(df_crom_U_INV_90), "tienen un Score superior al 90%.")
+```
+
+
+### Resultados de potenciales inversiones del cromosoma U
+
+Las inversiones se espera que tengan más de 2 millones de pares de bases, ya que la inversión $U_8$ se espera que sea bastante grande, y se visualiza si al menos alguna de ellas podría ser válida.
+
+```{r}
+df_crom_U_INV_90_2M <- df_crom_U_INV_90 %>% filter(Longitud > 2000000)
+paste( "Hay", nrow(df_crom_U_INV_90_2M), "inversiones a analizar.")
+df_crom_U_INV_90_2M
+```
+
+
+```{r}
+library(kableExtra)
+df_crom_U_INV_90_2M %>%
+  kable(
+    caption = "Tabla de inversiones a analizar en el cromosoma U.", 
+    align = "c",
+    col.names = c("Cromosoma", "Posición 1", "Orientación 1", "Posición 2", "Orientación 2", "Tipo SV", "Longitud", "Score", "Número de Lecturas"), 
+    format = "html" 
+  ) %>%
+  kable_styling(
+    bootstrap_options = c("striped", "hover", "condensed"), 
+    font_size = 13 
+  )
+```
+
