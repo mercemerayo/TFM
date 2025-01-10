@@ -1,6 +1,6 @@
 ---
 title: "Validación de los puntos de rotura de la inversión $U_8$"
-author: "Merce Merayo Pastor"
+author: "Mercè Merayo Pastor"
 date: "2025-01-02"
 output: 
   html_document:
@@ -11,6 +11,11 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+```{r idioma, include=FALSE}
+Sys.setlocale(category = "LC_ALL", locale = "en_US.UTF-8")
+Sys.setenv(LANGUAGE="es")
 ```
 
 # Introducción
