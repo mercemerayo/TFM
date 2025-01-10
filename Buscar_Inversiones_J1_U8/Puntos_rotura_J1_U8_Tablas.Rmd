@@ -1,6 +1,6 @@
 ---
 title: "Puntos de rotura identificados en los cromosomas J y U"
-author: "Merce Merayo Pastor"
+author: "Mercè Merayo Pastor"
 date: "2024-11-16"
 output: 
   html_document:
