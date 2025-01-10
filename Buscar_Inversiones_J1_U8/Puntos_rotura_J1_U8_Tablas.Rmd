@@ -9,11 +9,14 @@ output:
     theme: paper
 ---
 
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
+```{r idioma, include=FALSE}
+Sys.setlocale(category = "LC_ALL", locale = "en_US.UTF-8")
+Sys.setenv(LANGUAGE="es")
+```
 
 # Introducción
 
