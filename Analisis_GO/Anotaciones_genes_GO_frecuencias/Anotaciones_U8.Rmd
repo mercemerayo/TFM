@@ -1,0 +1,426 @@
+--- 
+title: "Análisis de Anotaciones GO de la inversión $U_8$ de *Drosophila subobscura*"
+author: "Mercè Merayo Pastor"
+date: "10-12-2024"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    theme: paper
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message = FALSE)
+```
+
+```{r idioma, include=FALSE}
+Sys.setlocale(category = "LC_ALL", locale = "en_US.UTF-8")
+Sys.setenv(LANGUAGE="es")
+```
+
+# Introducción
+
+Este documento analiza las anotaciones GO obtenidas del archivo `.gaf` del genoma de referencia `Genome assembly UCBerk_Dsub_1.0` de *Drosophila subobscura*. 
+
+Se agrupan los **Procesos biológicos**, **Funciones moleculares**, y **Componentes celulares** más frecuentes para la invesión $U_8$ tanto en las regiones flanqueantes de los puntos de rotura encontrados con Breakdancer y validados parcialmente tras realizar un ensamblaje *de novo* en la cepa OF58, como en la región interna de la inversión.
+
+Inicialmente se ha encontrado una invesión con Breakdancer compatible con la inversión $U_8$ con los puntos de rotura en las coordenadas del genoma de referencia de *Drosophila subobscura*  7.772.887 y 14.722.269.
+
+# Preparación de Datos
+
+```{r librerias, include=FALSE}
+library(ggplot2)
+library(dplyr)
+library(GO.db)
+```
+
+```{r load-data, echo=TRUE}
+# Leer los datos del archivo procesado
+datos_anotaciones_U <- read.csv("anotaciones_estudio_coord_U.csv", header = FALSE, stringsAsFactors = FALSE)
+colnames(datos_anotaciones_U) <- c("Gen", "Cromosoma", "Inicio", "Fin", "GO_ID", "Tipo")
+```
+
+Agregar las descripciones de los términos GO (Gene Ontology) desde la base de datos `GO.db`.
+
+```{r}
+# Crear una nueva columna con las descripciones
+datos_anotaciones_U$Descripcion_GO <- sapply(datos_anotaciones_U$GO_ID, function(go_id) {
+  # Extraer la descripción desde GO.db
+  Term(go_id)
+})
+
+datos_anotaciones_U$Definicion_GO <- sapply(datos_anotaciones_U$GO_ID, function(go_id) {
+  # Extraer la definición desde GO.db
+  Definition(go_id)
+})
+
+```
+
+Carga de las anotaciones del genoma de referecia de *Dosophila subobscura* a partir de la descarga de la tabla .tsv desde [https://www.ncbi.nlm.nih.gov/datasets/gene/GCF_008121235.1/].
+
+```{r}
+genes_anotados_Dsub <- read.csv("genes_anotados_Dsubobscura.csv", header=TRUE, stringsAsFactors = FALSE)
+genes_anotados_Dsub_U <- genes_anotados_Dsub %>% filter(Accession == "NC_048534.1")
+```
+
+```{r}
+datos_anotaciones_U <- datos_anotaciones_U %>%
+  left_join(genes_anotados_Dsub %>% dplyr::select(Symbol, Name), by = c("Gen" = "Symbol"))
+```
+
+```{r}
+datos_anotaciones_U <- datos_anotaciones_U %>% distinct()
+```
+
+
+Se filtran las anotaciones por las tres categorías principales de Gene Ontology.
+
+```{r agrupar_datos, echo=TRUE}
+Proceso_biologico <- datos_anotaciones_U %>% filter(Tipo == "P")
+Funcion_molecular <- datos_anotaciones_U %>% filter(Tipo == "F")
+Componente_celular <- datos_anotaciones_U %>% filter(Tipo == "C")
+```
+
+Se definen los puntos de rotura la inversión $U_8$ detectados por Breakdancer para filtrar toda la región interna de la inversión.
+
+```{r}
+punto_proximal <- 7772887
+#punto_distal <- 14722269
+punto_distal <- 14721766
+```
+
+
+```{r}
+Proceso_biologico_U8 <- Proceso_biologico %>% filter(Inicio >= punto_proximal & Fin <= punto_distal)
+Funcion_molecular_U8 <- Funcion_molecular %>% filter(Inicio >= punto_proximal & Fin <= punto_distal)
+Componente_celular_U8 <- Componente_celular %>% filter(Inicio >= punto_proximal & Fin <= punto_distal)
+```
+
+
+# Resultados
+
+## Procesos Biológicos dentro de la inversión $U_8$
+
+```{r tabla_proc_bio}
+# Contar la frecuencia de cada descripción
+tabla_proce_bio_U8 <- Proceso_biologico_U8 %>%
+  count(Descripcion_GO, sort = TRUE)
+
+# La Descripcion se convierte a factor para ordenar las barras por frecuencia más adelante
+tabla_proce_bio_U8 <- tabla_proce_bio_U8 %>%
+  mutate(Descripcion_GO = factor(Descripcion_GO, levels = rev(unique(Descripcion_GO))))
+
+num_procesos_bio_U8 <- n_distinct(Proceso_biologico_U8$Descripcion_GO) # Se evitan la repeticiones
+
+paste("Hay", num_procesos_bio_U8, "procesos biológicos diferente en los genes de la región U8.")
+
+```
+
+```{r tabla_proc_bio_top}
+# Filtrar los conceptos más frecuentes en este caso 15 
+top_n <- 15  
+tabla_proce_bio_U8_top15 <- tabla_proce_bio_U8 %>%
+  slice_max(n, n = top_n)
+
+tabla_proce_bio_U8_top15_orden <- tabla_proce_bio_U8_top15 %>%
+  mutate(Descripcion_GO = factor(Descripcion_GO, levels = rev(unique(Descripcion_GO)))) %>%
+  filter(!is.na(Descripcion_GO))
+```
+
+
+```{r graf_proc_bio}
+color_palette <- colorRampPalette(c("#D0EFFF", "#45868B"))(nrow(tabla_proce_bio_U8_top15_orden))
+
+
+graf_proc_bio_U8 <- ggplot(tabla_proce_bio_U8_top15_orden, aes(x = Descripcion_GO, y = n, fill = Descripcion_GO)) +
+  geom_bar(stat = "identity" ) +
+  geom_text(aes(label = n), hjust = 2, size = 3) +
+  labs(title = "Procesos biológicos más frecuentes",subtitle = "Inversión U8", y = "Frecuencia", x = NULL) +
+  scale_fill_manual(values = color_palette) + 
+  coord_flip() +
+  theme_classic()+
+  theme(legend.position = "none")
+graf_proc_bio_U8
+```
+
+
+## Funciones Moleculares
+
+```{r tabla_fun_molec}
+# Contar la frecuencia de cada descripción
+tabla_fun_molec_U8 <- Funcion_molecular_U8 %>%
+  count(Descripcion_GO, sort = TRUE)
+
+# La Descripcion se convierte a factor para ordenar las barras por frecuencia más adelante
+tabla_fun_molec_U8 <- tabla_fun_molec_U8 %>%
+  mutate(Descripcion_GO = factor(Descripcion_GO, levels = rev(unique(Descripcion_GO))))
+
+num_fun_molec_U8 <- n_distinct(Funcion_molecular_U8$Descripcion_GO)
+
+paste("Hay", num_fun_molec_U8, "funciones moleculares diferentes en los genes de la región U_8.")
+
+```
+
+```{r tabla_fun_molec_top}
+# Filtrar los conceptos más frecuentes 
+tabla_fun_molec_U8_top15 <- tabla_fun_molec_U8 %>%
+  slice_max(n, n = top_n)
+
+tabla_fun_molec_U8_top15_orden <- tabla_fun_molec_U8_top15 %>%
+  mutate(Descripcion_GO = factor(Descripcion_GO, levels = rev(unique(Descripcion_GO)))) %>%
+  filter(!is.na(Descripcion_GO))
+```
+
+
+
+```{r graf_fun_molec}
+color_palette <- colorRampPalette(c("#FFE4C4", "#FF6F70"))(nrow(tabla_fun_molec_U8_top15_orden))
+
+
+graf_fun_molec_U8 <- ggplot(tabla_fun_molec_U8_top15_orden, aes(x = Descripcion_GO, y = n, fill = Descripcion_GO)) +
+  geom_bar(stat = "identity" ) +
+  geom_text(aes(label = n), hjust = 2, size = 3) +
+  labs(title = "Funciones moleculares más frecuentes", subtitle = "Inversión U8",y = "Frecuencia", x = NULL) +
+  scale_fill_manual(values = color_palette) + 
+  coord_flip() +
+  theme_classic()+
+  theme(legend.position = "none")
+graf_fun_molec_U8
+```
+
+## Componentes Celulares
+
+```{r tabla_comp}
+# Contar la frecuencia de cada descripción
+tabla_componente_U8 <- Componente_celular_U8 %>%
+  count(Descripcion_GO, sort = TRUE)
+
+# Convertir la Descripcion_GO a factor para ordenar las barras por frecuencia
+tabla_componente_U8 <- tabla_componente_U8 %>%
+  mutate(Descripcion_GO = factor(Descripcion_GO, levels = rev(unique(Descripcion_GO))))
+
+num_componente_U8 <- n_distinct(Componente_celular_U8$Descripcion_GO)
+
+# Generar el mensaje
+paste("Hay", num_componente_U8, "componentes celulares diferentes en los genes de la región U_8.")
+
+```
+
+```{r tabla_comp_top}
+# Componentes celulares más frecuentes en la inversión U_8 
+tabla_componente_U8_top15 <- tabla_componente_U8 %>%
+  slice_max(n, n = top_n)
+
+tabla_componente_U8_top15_orden <- tabla_componente_U8_top15 %>%
+  mutate(Descripcion_GO = factor(Descripcion_GO, levels = rev(unique(Descripcion_GO)))) %>%
+  filter(!is.na(Descripcion_GO))
+```
+
+
+
+```{r graf_comp}
+color_palette <- colorRampPalette(c("#FFDBFF","#9B668B"))(nrow(tabla_componente_U8_top15_orden))
+
+
+graf_comp_U8 <- ggplot(tabla_componente_U8_top15_orden, aes(x = Descripcion_GO, y = n, fill = Descripcion_GO)) +
+  geom_bar(stat = "identity" ) +
+  geom_text(aes(label = n), hjust = 2, size = 3) +
+  labs(title = "Componentes celulares más frecuentes", subtitle = "Inversión U8", y = "Frecuencia", x = NULL) +
+  scale_fill_manual(values = color_palette) + 
+  coord_flip() +
+  theme_classic()+
+  theme(legend.position = "none")
+graf_comp_U8
+```
+
+
+
+```{r guardar_jpg, include=FALSE}
+ggsave(filename = "grafico_proceso_biologico_U8.jpg", plot = graf_proc_bio_U8, device = "jpeg")
+ggsave(filename = "grafico_funcion_molecular_U8.jpg", plot = graf_fun_molec_U8, device = "jpeg")
+ggsave(filename = "grafico_componente_celular_U8.jpg", plot = graf_comp_U8, device = "jpeg")
+
+```
+
+## Regiones flanqueantes de los puntos de rotura
+
+### Tablas región flanqueante proximal
+
+```{r}
+datos_anotaciones_U8_proximal <- datos_anotaciones_U %>% filter(Inicio >= (punto_proximal - 5000) & Fin <= (punto_proximal + 5000))
+```
+
+
+```{r}
+library(kableExtra)
+
+tabla_proximal <- datos_anotaciones_U8_proximal %>%
+  mutate(Coordenadas = paste0(Inicio, "-", Fin)) %>%  # Crear la columna de coordenadas
+  group_by(Gen, Name, Coordenadas) %>%  # Agrupar por Gen, Name y Coordenadas
+  summarise(
+    Funciones_Moleculares = paste0(
+      unique(paste(GO_ID[Tipo == "F"], Descripcion_GO[Tipo == "F"], sep = ": ")), 
+      collapse = "; "
+    ),
+    Procesos_Biologicos = paste0(
+      unique(paste(GO_ID[Tipo == "P"], Descripcion_GO[Tipo == "P"], sep = ": ")), 
+      collapse = "; "
+    ),
+    Componentes_Celulares = paste0(
+      unique(paste(GO_ID[Tipo == "C"], Descripcion_GO[Tipo == "C"], sep = ": ")), 
+      collapse = "; "
+    )
+  ) %>%
+  ungroup() %>%
+  mutate(
+    Gen_Nombre = paste0(Gen, " - ", Name)  # Combinar Gen y Name en una sola celda
+  ) %>%
+  dplyr::select(Gen_Nombre, Coordenadas, Funciones_Moleculares, Procesos_Biologicos, Componentes_Celulares)  %>%
+  arrange(as.numeric(sub("-.*", "", Coordenadas))) 
+```
+
+
+```{r}
+# Reemplazar el separador ";" por saltos de línea en HTML
+tabla_proximal <- tabla_proximal %>%
+  mutate(
+    Funciones_Moleculares = gsub("; ", "<br>", Funciones_Moleculares),
+    Procesos_Biologicos = gsub("; ", "<br>", Procesos_Biologicos),
+    Componentes_Celulares = gsub("; ", "<br>", Componentes_Celulares)
+  )
+
+
+tabla_proximal %>%
+  kable(
+    format = "html",
+    escape = FALSE,  # Necesario para procesar HTML como <br>
+    col.names = c("Gen / Nombre de la proteína", "Coordenadas genómicas", "Funciones Moleculares",
+                  "Procesos Biológicos", "Componentes Celulares"),
+    caption = "Términos GO de los genes situados cerca del punto de rotura proximal de la inversión U_8"
+  ) 
+
+```
+
+
+### Tablas región flanqueante distal
+
+```{r}
+datos_anotaciones_U8_distal <- datos_anotaciones_U %>% filter(Inicio >= (punto_distal - 5000) & Fin <= (punto_distal + 5000))
+```
+
+
+```{r warning=FALSE}
+
+tabla_distal <- datos_anotaciones_U8_distal %>%
+  mutate(Coordenadas = paste0(Inicio, "-", Fin)) %>%  # Columna de coordenadas
+  group_by(Gen, Name, Coordenadas) %>%  # Agrupar por Gen, Name y Coordenadas
+  summarise(
+    Funciones_Moleculares = paste0(
+      unique(paste(GO_ID[Tipo == "F"], Descripcion_GO[Tipo == "F"], sep = ": ")), 
+      collapse = "; "
+    ),
+    Procesos_Biologicos = paste0(
+      unique(paste(GO_ID[Tipo == "P"], Descripcion_GO[Tipo == "P"], sep = ": ")), 
+      collapse = "; "
+    ),
+    Componentes_Celulares = paste0(
+      unique(paste(GO_ID[Tipo == "C"], Descripcion_GO[Tipo == "C"], sep = ": ")), 
+      collapse = "; "
+    )
+  ) %>%
+  ungroup() %>%
+  mutate(
+    Gen_Nombre = paste0(Gen, " - ", Name)  # Combinar Gen y Name en una sola celda
+  ) %>%
+  dplyr::select(Gen_Nombre, Coordenadas, Funciones_Moleculares, Procesos_Biologicos, Componentes_Celulares) %>%
+  arrange(as.numeric(sub("-.*", "", Coordenadas))) 
+
+```
+
+```{r}
+tabla_distal <- tabla_distal %>%
+  mutate(
+    Funciones_Moleculares = gsub("; ", "<br>", Funciones_Moleculares),
+    Procesos_Biologicos = gsub("; ", "<br>", Procesos_Biologicos),
+    Componentes_Celulares = gsub("; ", "<br>", Componentes_Celulares)
+  )
+
+tabla_distal %>%
+  kable(
+    col.names = c("Gen / Nombre de la proteína", "Coordenadas genómicas", "Funciones Moleculares",
+                  "Procesos Biológicos", "Componentes Celulares"),
+    caption = "Términos GO de los genes situados cerca del punto de rotura distal de la inversión U_8"
+  ) 
+
+```
+
+### Genes que contienen algun punto de rotura
+
+```{r}
+genes_en_punto_rotura <- datos_anotaciones_U %>%
+  filter((punto_proximal >= Inicio & punto_proximal <= Fin) | (punto_distal >= Inicio & punto_distal <= Fin))
+kable(genes_en_punto_rotura)
+```
+
+
+## Exploración de genes relacionados con la adaptación térmica en la inversión $U_8$ 
+
+Se analiza la inversión cromosómica $U_8$ en la que se busca identificar genes asociados a la adaptación térmica dentro de esta región. Basado en el artículo de Antunes et al. (2024), que enumera genes involucrados en procesos como proteólisis, metabolismo de lípidos y plasticidad adaptativa, se quiere determinar si alguno de estos genes está presente en la región que en este TFM se ha identificado como la inversió $U_8$. 
+
+```{r}
+genes_Antunes <- read.csv("GeneID_Antunes_paper.csv", stringsAsFactors = FALSE)
+```
+
+Se buscan las coincidencias de genes listados en el artículo. 
+
+```{r}
+genesU8_coincidentes <- datos_anotaciones_U %>%
+  filter(Gen %in% genes_Antunes$GeneID_Antunes)
+```
+
+```{r}
+
+genesU8_Antunes <- genesU8_coincidentes %>%
+  mutate(Coordenadas = paste0(Inicio, "-", Fin)) %>%  # Columna de coordenadas
+  group_by(Gen, Name, Coordenadas) %>%  # Agrupar por Gen, Name y Coordenadas
+  summarise(
+    Funciones_Moleculares = paste0(
+      unique(paste(GO_ID[Tipo == "F"], Descripcion_GO[Tipo == "F"], sep = ": ")), 
+      collapse = "; "
+    ),
+    Procesos_Biologicos = paste0(
+      unique(paste(GO_ID[Tipo == "P"], Descripcion_GO[Tipo == "P"], sep = ": ")), 
+      collapse = "; "
+    ),
+    Componentes_Celulares = paste0(
+      unique(paste(GO_ID[Tipo == "C"], Descripcion_GO[Tipo == "C"], sep = ": ")), 
+      collapse = "; "
+    )
+  ) %>%
+  ungroup() %>%
+  mutate(
+    Gen_Nombre = paste0(Gen, " - ", Name)  # Combinar Gen y Name en una sola celda
+  ) %>%
+  dplyr::select(Gen_Nombre, Coordenadas, Funciones_Moleculares, Procesos_Biologicos, Componentes_Celulares) %>%
+  arrange(as.numeric(sub("-.*", "", Coordenadas))) 
+
+```
+
+```{r}
+tabla_genesU8_Antunes <- genesU8_Antunes %>%
+  mutate(
+    Funciones_Moleculares = gsub("; ", "<br>", Funciones_Moleculares),
+    Procesos_Biologicos = gsub("; ", "<br>", Procesos_Biologicos),
+    Componentes_Celulares = gsub("; ", "<br>", Componentes_Celulares)
+  )
+
+tabla_genesU8_Antunes %>%
+  kable(
+    col.names = c("Gen / Nombre de la proteína", "Coordenadas genómicas", "Funciones Moleculares",
+                  "Procesos Biológicos", "Componentes Celulares"),
+    caption = "Términos GO de los genes relacionados con la adaptación térmica"
+  ) 
+
+```
+
+
