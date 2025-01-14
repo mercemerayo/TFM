@@ -1,4 +1,4 @@
-## Mapaeado/Alineamiento: `Alineamiento_bwamem2_hologenoma_Dsub.sh`
+## Mapeado/Alineamiento: `Alineamiento_bwamem2_hologenoma_Dsub.sh`
 Este script se utiliza para:
 - Indexar el hologenoma
 - Mapear las lecturas limpias FASTQ con el hologenoma, generando un fichero en formato SAM.
