@@ -26,7 +26,7 @@ OF58_mate_proc_dupmarc_bwamem2.bam Drosophila_subobscura_genoma_referencia.fa
 - Instalación de `BLAST` en https://anaconda.org/bioconda/blast
 
 ### Salida
-- Contigs ensamblados en las regiones flanqueantes de los .
+- Contigs ensamblados en las regiones flanqueantes de los puntos de rotura de la inversión $U_8$.
 - Resultados de alineamiento BLAST.
 
 ### Manuales y referencias
