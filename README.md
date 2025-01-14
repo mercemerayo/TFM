@@ -29,4 +29,14 @@ El uso del _script_ `busqueda_contigs_regiones_flanqueantes_puntos_rotura_U.sh` 
 ![Diagrama de flujo ensamblaje de novo y BLAST](diagramas/Ensamblaje_de_novo_BLAST_proceso.png)
 
 #### Flujo de trabajo para filtrar genes y terminos GO en cualquier región de cualquier cromosoma de *Drosophila subobscura* 
+El detalle de uso de este *script* está en https://github.com/mercemerayo/TFM/blob/main/Analisis_GO/guia_genes_go.md.
+
 ![Diagrama de flujo el filtrado de genes y términos GO](diagramas/proceso_GO.png)
+
+### Ficheros `Rmarkdown`
+- Filtrar ficheros de salida de Breakdancer y dar formato a las tablas.
+HTML y Rmd disponibles en https://github.com/mercemerayo/TFM/tree/main/Buscar_Inversiones_J1_U8
+- Dar formato al ficheros de salida de los contigs alineados al genoma de referencia de *Drosophila subobscura*.
+HTML y Rmd disponibles en https://github.com/mercemerayo/TFM/tree/main/Contigs_U8_alineados_BLAST
+- Análisis de términos GO con `Bioconductor` y generación de gráficos de frecuencias.
+HTML y Rmd disponibles en [(TFM/Analisis GO/Anotaciones genes GO frecuencias)](https://github.com/mercemerayo/TFM/tree/main/Analisis_GO/Anotaciones_genes_GO_frecuencias)
