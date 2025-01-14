@@ -1,10 +1,20 @@
-## Búsqueda de contigs: `busqueda_contigs_regiones_flanqueantes_puntos_rotura.sh`
+## Búsqueda de contigs: `busqueda_contigs_regiones_flanqueantes_puntos_rotura_U.sh`
 
 ### Descripción
-- Se preparan las lecturas con usando `Samtools`
-- Genera *contigs* en regiones flanqueantes de puntos de rotura mediante un ensamblaje *de novo* con `SPAdes`usando `Samtools` y `BLAST`.
+Este *script* está adaptado para encontrar los *contigs* de las regiones flanqueantes de los puntos de rotura compatibles con la inversión cromosómica $U_8$.
+- Se preparan las lecturas usando `Samtools`
+- Genera *contigs* en regiones flanqueantes de puntos de rotura mediante un ensamblaje *de novo* con `SPAdes`
+- Se alinean los *contigs* al genoma de referencia con `BLAST`.
 
 ### Uso
+
+Se pasan como argumentos:
+- Un fichero tabulado con los nombres de la ventana y carpetas de salida ademas de las coordenadas de inicio y fin de los puntos de rotura proximal y distal, del tipo:
+```bash
+ven_1	ensamblaje_ven_1	7772887	7778000	14722000	14727000
+```
+- El fichero .bam de la lecturas de la cepa OF58 mapeadas y procesadas.
+- El genoma de referencia en formato fasta 
 ```bash
 ./busqueda_contigs_regiones_flanqueantes_puntos_rotura.sh ventanas_flanqueantes.txt \
 OF58_mate_proc_dupmarc_bwamem2.bam Drosophila_subobscura_genoma_referencia.fa
@@ -16,7 +26,7 @@ OF58_mate_proc_dupmarc_bwamem2.bam Drosophila_subobscura_genoma_referencia.fa
 - Instalación de `BLAST` en https://anaconda.org/bioconda/blast
 
 ### Salida
-- Contigs ensamblados.
+- Contigs ensamblados en las regiones flanqueantes de los .
 - Resultados de alineamiento BLAST.
 
 ### Manuales y referencias
