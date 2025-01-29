@@ -32,4 +32,4 @@ echo "Indexando archivo BAM con duplicados marcados"
 samtools index OF58_mate_proc_dupmarc_bwamem2.bam
 
 # Generación de estadísticas 
-samtools flagstat -t 4 OF58_mate_proc_dupmarc_bwamem2.bam > OF58_estadisticas_maporddup.txt
+samtools flagstat OF58_mate_proc_dupmarc_bwamem2.bam > OF58_estadisticas_maporddup.txt
